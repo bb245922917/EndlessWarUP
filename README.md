@@ -29,13 +29,13 @@
 
 ## 游戏读取的地址
 
-仓库：<https://github.com/bb245922917/EndlessWarUP>（公开，默认分支 `master`）
+仓库：<https://github.com/bb245922917/EndlessWarUpdate>（公开，默认分支 `master`）
 
 | 用途 | 地址 | 状态 |
 | --- | --- | --- |
-| **主地址（jsDelivr CDN）** | `https://cdn.jsdelivr.net/gh/bb245922917/EndlessWarUP@master/announcement.json` | 已实测 200 |
-| 备用 1（raw） | `https://raw.githubusercontent.com/bb245922917/EndlessWarUP/master/announcement.json` | 已实测 200 |
-| 备用 2（GitHub Pages） | `https://bb245922917.github.io/EndlessWarUP/announcement.json` | 需先开 Pages，当前 404 |
+| **主地址（jsDelivr CDN）** | `https://cdn.jsdelivr.net/gh/bb245922917/EndlessWarUpdate@master/announcement.json` | 已实测 200 |
+| 备用 1（raw） | `https://raw.githubusercontent.com/bb245922917/EndlessWarUpdate/master/announcement.json` | 已实测 200 |
+| 备用 2（GitHub Pages） | `https://bb245922917.github.io/EndlessWarUpdate/announcement.json` | 需先开 Pages，当前 404 |
 
 **蓝图里现在填的是主地址（jsDelivr）**，无需任何额外设置，改完表格推送即可生效。
 
