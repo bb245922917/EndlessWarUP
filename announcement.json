@@ -2,13 +2,13 @@
   "schema": 1,
   "version_name": "V 0.1.6.3",
   "version_code": 185,
-  "updated": "2026-09-09 22:05:35",
+  "updated": "2026-09-10 06:10:49",
   "notice": {
     "Name": "1",
-    "详情中文": "版本号:V 0.1.6.3\n\n1.增强技能伤害范围；\n\n2.资源获得更容易；\n\n3.提升广告响应速度：\n\n4.修复若干Bug。",
-    "详情英文": "Version:V 0.1.6.3\n\n1.Enhance skill damage range;\n\n2.Make resources easier to obtain;\n\n3.Improve ad response speed;\n\n4.Fix several bugs.",
-    "详情日文": "バージョン:V 0.1.6.3\n\n1.スキルのダメージ範囲を強化；\n\n2.リソースの獲得を容易に；\n\n3.広告の応答速度を向上；\n\n4.いくつかのバグを修正。",
-    "详情韩文": "버전:V 0.1.6.3\n\n1.스킬 피해 범위 강화；\n\n2.자원 획득 용이；\n\n3.광고 응답 속도 향상；\n\n4.여러 버그 수정。"
+    "详情中文": "版本号:V 0.1.6.3\n1.增强技能伤害范围；\n2.资源获得更容易；\n3.提升广告响应速度：\n4.修复若干Bug。",
+    "详情英文": "Version:V 0.1.6.3\n1.Enhance skill damage range;\n2.Make resources easier to obtain;\n3.Improve ad response speed;\n4.Fix several bugs.",
+    "详情日文": "バージョン:V 0.1.6.3\n1.スキルのダメージ範囲を強化；\n2.リソースの獲得を容易に；\n3.広告の応答速度を向上；\n4.いくつかのバグを修正。",
+    "详情韩文": "버전:V 0.1.6.3\n1.스킬 피해 범위 강화；\n2.자원 획득 용이；\n3.광고 응답 속도 향상；\n4.여러 버그 수정。"
   },
   "rewards": [
     {

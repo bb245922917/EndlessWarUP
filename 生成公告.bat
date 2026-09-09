@@ -6,7 +6,7 @@ set "PY=C:\Users\Administrator\.workbuddy\binaries\python\envs\default\Scripts\p
 if not exist "%PY%" set "PY=python"
 
 echo.
-echo 正在把 announcements.xlsx 转换成 announcement.json ...
+echo 正在把两份 CSV 转换成 announcement.json ...
 echo.
 
 "%PY%" build_json.py
