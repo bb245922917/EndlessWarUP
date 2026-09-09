@@ -186,6 +186,32 @@ def fix_notice_csv():
     return 0
 
 
+def fix_reward_csv():
+    """把奖励 CSV 转 UTF-8，并恢复被 GBK 破坏的韩文/日文说明"""
+    fields, rows, enc = read_csv_any(REWARD_CSV)
+    if rows is None:
+        print("找不到:", REWARD_CSV)
+        return 0
+    print("奖励表当前编码:", enc)
+
+    sample_by_id = {s["ID"]: s for s in SAMPLE_REWARDS}
+    fixed = 0
+    for r in rows:
+        s = sample_by_id.get(_text(r.get("ID")))
+        if not s:
+            continue
+        for k in ("韩文说明", "日文说明"):
+            v = _text(r.get(k))
+            if v and "?" in v:
+                r[k] = s[k]
+                fixed += 1
+
+    write_csv_utf8(REWARD_CSV, fields, rows)
+    print("  已按 UTF-8(with BOM) 重写:", REWARD_CSV)
+    print("  恢复字段数:", fixed)
+    return 0
+
+
 def write_template():
     if not os.path.exists(NOTICE_CSV):
         write_csv_utf8(NOTICE_CSV, ["编号"] + NOTICE_LANGS, [SAMPLE_NOTICE])
@@ -286,7 +312,8 @@ def main():
     if "--init" in args:
         return write_template()
     if "--fix" in args:
-        return fix_notice_csv()
+        fix_notice_csv()
+        return fix_reward_csv()
 
     data = build()
     if data is None:
