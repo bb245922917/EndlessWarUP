@@ -21,19 +21,26 @@
    git commit -m "更新公告"
    git push
    ```
-   推送后约 1～2 分钟生效（游戏端有缓存，最迟下次启动生效）
+   推送后：raw 地址几乎立即生效；主地址 jsDelivr 有最长约 12 小时缓存（可到
+   `https://purge.jsdelivr.net` 手动清缓存）。游戏端每次启动都会拉，最迟下次启动拿得到。
 
 ---
 
 ## 游戏读取的地址
 
-| 用途 | 地址 |
-| --- | --- |
-| 主地址（GitHub Pages） | `https://<用户名>.github.io/<仓库名>/announcement.json` |
-| 备用 1（jsDelivr CDN） | `https://cdn.jsdelivr.net/gh/<用户名>/<仓库名>@main/announcement.json` |
-| 备用 2（raw） | `https://raw.githubusercontent.com/<用户名>/<仓库名>/main/announcement.json` |
+仓库：<https://github.com/bb245922917/EndlessWarUP>（公开，默认分支 `master`）
 
-仓库建好后会把占位替换成真实地址，并同步写进 `Docs\公告拉取逻辑_蓝图配置.md`。
+| 用途 | 地址 | 状态 |
+| --- | --- | --- |
+| **主地址（jsDelivr CDN）** | `https://cdn.jsdelivr.net/gh/bb245922917/EndlessWarUP@master/announcement.json` | 已实测 200 |
+| 备用 1（raw） | `https://raw.githubusercontent.com/bb245922917/EndlessWarUP/master/announcement.json` | 已实测 200 |
+| 备用 2（GitHub Pages） | `https://bb245922917.github.io/EndlessWarUP/announcement.json` | 需先开 Pages，当前 404 |
+
+**蓝图里现在填的是主地址（jsDelivr）**，无需任何额外设置，改完表格推送即可生效。
+
+想让更新更及时（jsDelivr 有约 12 小时缓存）：
+仓库 `Settings` → `Pages` → `Deploy from a branch` → 分支 `master` → `/ (root)` → `Save`，
+开启后把蓝图里的 URL 换成上表的「备用 2」即可。
 
 ---
 
