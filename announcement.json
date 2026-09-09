@@ -1,19 +1,25 @@
 {
   "schema": 1,
-  "updated": "2026-09-09 20:09:56",
-  "count": 1,
-  "items": [
+  "version_name": "V 0.1.6.3",
+  "version_code": 185,
+  "updated": "2026-09-09 22:05:35",
+  "notice": {
+    "Name": "1",
+    "详情中文": "版本号:V 0.1.6.3\n\n1.增强技能伤害范围；\n\n2.资源获得更容易；\n\n3.提升广告响应速度：\n\n4.修复若干Bug。",
+    "详情英文": "Version:V 0.1.6.3\n\n1.Enhance skill damage range;\n\n2.Make resources easier to obtain;\n\n3.Improve ad response speed;\n\n4.Fix several bugs.",
+    "详情日文": "バージョン:V 0.1.6.3\n\n1.スキルのダメージ範囲を強化；\n\n2.リソースの獲得を容易に；\n\n3.広告の応答速度を向上；\n\n4.いくつかのバグを修正。",
+    "详情韩文": "버전:V 0.1.6.3\n\n1.스킬 피해 범위 강화；\n\n2.자원 획득 용이；\n\n3.광고 응답 속도 향상；\n\n4.여러 버그 수정。"
+  },
+  "rewards": [
     {
-      "id": "A20260909001",
-      "title": "新版本 0.1.6.4 更新内容",
-      "date": "2026-09-09",
-      "tag": "更新",
-      "content": "1. 优化了低端机型的帧率表现\n\n2. 新增战斗中随机奖励热气球\n\n3. 修复若干已知问题",
-      "image": "",
-      "important": true,
-      "min_code": 185,
-      "max_code": 0,
-      "lang": "zh"
+      "ID": "3",
+      "奖励名称": "金币",
+      "奖励数量": 1000
+    },
+    {
+      "ID": "4",
+      "奖励名称": "钻石",
+      "奖励数量": 600
     }
   ]
 }

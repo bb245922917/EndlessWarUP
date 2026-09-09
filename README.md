@@ -1,73 +1,91 @@
-# 无尽战争 - 游戏公告（在线热更新）
+# 无尽战争 - 在线公告数据
 
-游戏启动时从这个仓库拉取 `announcement.json`，显示最新公告。改公告不用重新打包上架。
+游戏从这个仓库拉取 `announcement.json`，拿到**四国语言的公告文本**和**更新奖励的数量**。
+改公告、改发多少金币钻石，都不用重新打包上架。
+
+数据结构与游戏内结构体严格一致：
+- `notice` 的四个字段 = `ST_公告结构体` 的 详情中文 / 详情英文 / 详情日文 / 详情韩文
+- `rewards` 的字段 = 奖励结构体的 ID / 奖励名称 / 奖励数量（金币 ID=3，钻石 ID=4）
+
+---
 
 ## 日常更新流程（三步）
 
-1. 打开 `announcements.xlsx`，按行填（或改）公告，`enabled` 列填 `TRUE` 才下发
+1. 打开 `announcements.xlsx`
+   - 「公告」页：改版本名、版本号(versionCode)、四种语言的正文
+   - 「奖励」页：改金币、钻石的数量
 2. 双击 `生成公告.bat`，生成 `announcement.json`
-3. 提交并推送：
+3. 提交推送：
    ```
    git add announcement.json announcements.xlsx
    git commit -m "更新公告"
    git push
    ```
-   推送后约 1～2 分钟，游戏里就能看到新公告（游戏端有缓存，最迟下次启动生效）
+   推送后约 1～2 分钟生效（游戏端有缓存，最迟下次启动生效）
+
+---
 
 ## 游戏读取的地址
 
 | 用途 | 地址 |
 | --- | --- |
-| 主地址（GitHub Pages，推荐） | `https://bb245922917.github.io/endlesswar-announcements/announcement.json` |
-| 备用 1（jsDelivr CDN） | `https://cdn.jsdelivr.net/gh/bb245922917/endlesswar-announcements@main/announcement.json` |
-| 备用 2（raw） | `https://raw.githubusercontent.com/bb245922917/endlesswar-announcements/main/announcement.json` |
+| 主地址（GitHub Pages） | `https://<用户名>.github.io/<仓库名>/announcement.json` |
+| 备用 1（jsDelivr CDN） | `https://cdn.jsdelivr.net/gh/<用户名>/<仓库名>@main/announcement.json` |
+| 备用 2（raw） | `https://raw.githubusercontent.com/<用户名>/<仓库名>/main/announcement.json` |
 
-主地址不通时游戏会自动依次尝试备用地址。
+仓库建好后会把占位替换成真实地址，并同步写进 `Docs\公告拉取逻辑_蓝图配置.md`。
 
-## 表格字段
-
-完整说明在 `announcements.xlsx` 的「字段说明」工作表里，简要如下：
-
-| 字段 | 说明 |
-| --- | --- |
-| id | 公告唯一 ID，用来记录"已读"，**不要改已经发过的** |
-| title | 标题 |
-| date | 日期 `2026-09-09` |
-| tag | 更新 / 活动 / 维护 / 补偿 / 公告 |
-| content | 正文，单元格内 Alt+Enter 换行 |
-| image | 配图地址，可留空 |
-| important | TRUE = 进游戏强制弹窗；FALSE = 只在公告列表里显示 |
-| min_code | 最低版本号(versionCode)才显示，0 = 不限 |
-| max_code | 最高版本号，0 = 不限 |
-| lang | zh / en |
-| enabled | FALSE = 这条不下发（临时下线用） |
+---
 
 ## JSON 结构
 
 ```json
 {
   "schema": 1,
-  "updated": "2026-09-09 20:15:00",
-  "count": 1,
-  "items": [
-    {
-      "id": "A20260909001",
-      "title": "新版本 0.1.6.4 更新内容",
-      "date": "2026-09-09",
-      "tag": "更新",
-      "content": "1. 优化了低端机型的帧率表现\n2. 修复若干已知问题",
-      "image": "",
-      "important": true,
-      "min_code": 185,
-      "max_code": 0,
-      "lang": "zh"
-    }
+  "version_name": "V 0.1.6.3",
+  "version_code": 185,
+  "updated": "2026-09-09 22:10:00",
+  "notice": {
+    "Name": "1",
+    "详情中文": "版本号:V 0.1.6.3\r\n1.增强技能伤害范围；\r\n2.资源获得更容易；\r\n3.提升广告响应速度：\r\n4.修复若干Bug。",
+    "详情英文": "Version:V 0.1.6.3\r\n1.Enhance skill damage range;\r\n...",
+    "详情日文": "...",
+    "详情韩文": "..."
+  },
+  "rewards": [
+    { "ID": "3", "奖励名称": "金币", "奖励数量": 1000 },
+    { "ID": "4", "奖励名称": "钻石", "奖励数量": 600 }
   ]
 }
 ```
 
-## 注意事项
+---
 
-- 仓库是公开的，别放任何私密信息
-- `announcement.json` 由脚本生成，不要手改（下次跑脚本会被覆盖）；要改就改表格
-- 网络请求失败时游戏会静默跳过，不会影响正常进入游戏
+## 表格说明
+
+**「公告」页**（只填一行）
+
+| 字段 | 说明 |
+| --- | --- |
+| 版本名 | 显示用，如 `V 0.1.6.3` |
+| 版本号 | versionCode，如 `185`，游戏用它判断是不是新版本 |
+| 详情中文 / 详情英文 / 详情日文 / 详情韩文 | 四种语言正文，单元格内 Alt+Enter 换行 |
+
+**「奖励」页**（每种奖励一行）
+
+| 字段 | 说明 |
+| --- | --- |
+| ID | 金币 = 3，钻石 = 4，别填错 |
+| 奖励名称 | 金币 / 钻石 |
+| 奖励数量 | 这次发多少 |
+| 备注 | 只是给你自己看的，不进 JSON |
+
+「字段说明」页有完整的字段解释。
+
+---
+
+## 注意
+
+- 这个仓库是公开的，别放任何私密信息
+- `announcement.json` 由脚本生成，不要手改（下次跑脚本会覆盖）；要改就改表格
+- 网络拿不到数据时，游戏会回退用本地的 `DT_公告数据表` / `DT_更新奖励数据表`，不会白屏也不会卡住
