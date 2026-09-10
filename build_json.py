@@ -131,10 +131,16 @@ def _int(v, default=0):
 
 
 def read_xlsx(path):
-    """读 XLSX 第一张表，返回 [dict, ...]（表头->单元格）。找不到返回 None。"""
+    """读 XLSX 第一张表，返回 [dict, ...]（表头->单元格）。找不到返回 None。
+
+    注意：刻意不用 read_only=True。当表被 Excel 撑大到很大的 used range
+    （例如 A1:T200，20 列 × 200 行，多为空单元格）时，openpyxl 的 read_only
+    解析会只读到首行首列，导致数据“凭空消失”、rewards 静默变空。
+    我们这份文件很小，普通模式即可，且更稳。
+    """
     if not os.path.exists(path):
         return None
-    wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+    wb = openpyxl.load_workbook(path, data_only=True)
     ws = wb.active
     rows = list(ws.iter_rows(values_only=True))
     wb.close()
@@ -144,6 +150,9 @@ def read_xlsx(path):
     out = []
     for r in rows[1:]:
         if r is None:
+            continue
+        # 跳过整行全空的（Excel 撑大的空行），避免无意义的 None 行
+        if all((c is None or (isinstance(c, str) and c.strip() == "")) for c in r):
             continue
         d = {}
         for i, h in enumerate(headers):
@@ -278,7 +287,18 @@ def build():
 
     rewards = []
     r_rows = read_xlsx(REWARD_XLSX)
-    if r_rows:
+    if r_rows is None:
+        warns.append(
+            "找不到奖励表 DT_更新奖励数据表.xlsx（应与本脚本同目录），rewards 将为空。"
+            "请确认文件没被改名/移动。"
+        )
+    elif not r_rows:
+        warns.append(
+            "奖励表 DT_更新奖励数据表.xlsx 读不到任何有效数据行，rewards 将为空。"
+            "若表里明明有数据，多半是表被 Excel 撑得过大导致解析异常——本脚本已改用普通模式读取，"
+            "重新运行一次即可；如仍为空，请检查首列/ID 列是否为空。"
+        )
+    else:
         for r in r_rows:
             if not _text(r.get("ID")):
                 continue
