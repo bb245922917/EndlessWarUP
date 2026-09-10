@@ -1,17 +1,8 @@
 @echo off
-chcp 65001 >nul
-cd /d "%~dp0"
-
-set "PY=C:\Users\Administrator\.workbuddy\binaries\python\envs\default\Scripts\python.exe"
-if not exist "%PY%" set "PY=python"
-
-echo.
-echo æ­£åœ¨æŠŠä¸¤ä»½ CSV è½¬æ¢æˆ announcement.json ...
-echo.
-
-"%PY%" build_json.py
-
-echo.
-echo å®ŒæˆåæŠŠ announcement.json æ¨åˆ° GitHub å³ç”Ÿæ•ˆï¼ˆæ¸¸æˆç«¯å‡ åˆ†é’Ÿå†…åˆ·æ–°ï¼‰ã€‚
-echo.
+cd /d "D:\Project\Unreal\ÎŞ¾¡Õ½Õù¹«¸æ¸üĞÂ"
+"C:\Users\Administrator\.workbuddy\binaries\python\versions\3.13.12\python.exe" build_json.py
+if errorlevel 1 (
+  echo.
+  echo [Ê§°Ü] Python ½Å±¾Î´Õı³£½áÊø£¬Çë°ÑÉÏÃæµÄ±¨´í½ØÍ¼·¢ÎÒ
+)
 pause
