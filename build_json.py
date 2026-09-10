@@ -321,6 +321,37 @@ def build():
     return data
 
 
+def dump_tables():
+    """把两个 XLSX 的全部数据按行打印出来，方便人工核对（不写文件）。
+
+    用法：python build_json.py --dump
+    """
+    targets = [
+        ("公告数据表", NOTICE_XLSX),
+        ("更新奖励数据表", REWARD_XLSX),
+    ]
+    for label, path in targets:
+        print("=" * 64)
+        print("【%s】  %s" % (label, os.path.basename(path)))
+        rows = read_xlsx(path)
+        if rows is None:
+            print("  !! 文件不存在（应与本脚本同目录）")
+            continue
+        if not rows:
+            print("  (空表，没有任何数据行)")
+            continue
+        headers = list(rows[0].keys())
+        for idx, r in enumerate(rows, 1):
+            print("  ---- 第 %d 行 ----" % idx)
+            for h in headers:
+                v = r.get(h)
+                if v is None or (isinstance(v, str) and v.strip() == ""):
+                    continue
+                s = str(v).replace("\r\n", " / ").replace("\n", " / ").replace("\r", " / ")
+                print("      %s = %s" % (h, s))
+    print("=" * 64)
+
+
 def main():
     args = sys.argv[1:]
 
@@ -329,6 +360,9 @@ def main():
     if "--fix" in args:
         fix_notice_xlsx()
         return fix_reward_xlsx()
+    if "--dump" in args:
+        dump_tables()
+        return 0
 
     data = build()
     if data is None:

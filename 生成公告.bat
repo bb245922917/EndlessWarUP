@@ -5,6 +5,10 @@ cd /d "%~dp0"
 set "PY=C:\Users\Administrator\.workbuddy\binaries\python\envs\default\Scripts\python.exe"
 if not exist "%PY%" set "PY=C:\Users\Administrator\.workbuddy\binaries\python\versions\3.13.12\python.exe"
 
+echo ===== 打印表格全部数据（核对用，不生成文件）=====
+"%PY%" build_json.py --dump
+echo.
+echo ===== 生成 announcement.json =====
 "%PY%" build_json.py
 if errorlevel 1 (
   echo.
