@@ -9,21 +9,32 @@
 
 ---
 
+## 数据源（XLSX，不再用 CSV）
+
+> 为什么是 XLSX：CSV 在 Excel 里默认存成 GBK/ANSI，而**谚文不在 GBK 字符集**，一存就变 `?` 且无法恢复。
+> XLSX 是 Unicode 原生存储（Office Open XML），中/日/韩文都不会丢，彻底根治乱码。
+> 生成脚本需要 `openpyxl`（本机 venv 已装；如需重装：`pip install openpyxl`）。
+
+- `DT_公告数据表.xlsx` — 四种语言的公告正文
+- `DT_更新奖励数据表.xlsx` — 金币、钻石的数量
+- `version_code.txt` — 这次的 versionCode，纯数字（当前 `185`）
+
+---
+
 ## 日常更新流程（三步）
 
-1. 改三处（都是 UTF-8 文本，双击可用 Excel / 记事本打开）
-   - `DT_公告数据表 - Sheet1.csv` — 四种语言的公告正文
-   - `DT_更新奖励数据表 - Sheet1.csv` — 金币、钻石的数量
+1. 改两处（用 Excel 打开下面的 XLSX，直接编辑文字，**另存为时选 .xlsx，不要选 CSV**）
+   - `DT_公告数据表.xlsx` — 四种语言的公告正文
+   - `DT_更新奖励数据表.xlsx` — 金币、钻石的数量
    - `version_code.txt` — 这次的 versionCode，纯数字（当前 `185`）
 2. 双击 `生成公告.bat`，生成 `announcement.json`
 3. 提交推送：
    ```
-   git add announcement.json "DT_公告数据表 - Sheet1.csv" "DT_更新奖励数据表 - Sheet1.csv" version_code.txt
+   git add announcement.json "DT_公告数据表.xlsx" "DT_更新奖励数据表.xlsx" version_code.txt
    git commit -m "更新公告"
    git push
    ```
-   推送后：raw 地址几乎立即生效；主地址 jsDelivr 有最长约 12 小时缓存（可到
-   `https://purge.jsdelivr.net` 手动清缓存）。游戏端每次启动都会拉，最迟下次启动拿得到。
+   推送后 GitHub Pages 约 1~2 分钟生效，游戏端下次启动即拉到最新（无 12 小时缓存）。
 
 ---
 
@@ -33,15 +44,11 @@
 
 | 用途 | 地址 | 状态 |
 | --- | --- | --- |
-| **主地址（jsDelivr CDN）** | `https://cdn.jsdelivr.net/gh/bb245922917/EndlessWarUpdate@master/announcement.json` | 已实测 200 |
+| **主地址（GitHub Pages）** | `https://bb245922917.github.io/EndlessWarUpdate/announcement.json` | 已开 Pages，推送后 1~2 分钟生效 |
 | 备用 1（raw） | `https://raw.githubusercontent.com/bb245922917/EndlessWarUpdate/master/announcement.json` | 已实测 200 |
-| 备用 2（GitHub Pages） | `https://bb245922917.github.io/EndlessWarUpdate/announcement.json` | 需先开 Pages，当前 404 |
+| 备用 2（jsDelivr CDN） | `https://cdn.jsdelivr.net/gh/bb245922917/EndlessWarUpdate@master/announcement.json` | 已实测 200，但有最长约 12 小时分支缓存 |
 
-**蓝图里现在填的是主地址（jsDelivr）**，无需任何额外设置，改完表格推送即可生效。
-
-想让更新更及时（jsDelivr 有约 12 小时缓存）：
-仓库 `Settings` → `Pages` → `Deploy from a branch` → 分支 `master` → `/ (root)` → `Save`，
-开启后把蓝图里的 URL 换成上表的「备用 2」即可。
+**蓝图里现在填的是 GitHub Pages 主地址**。改完表格推送即可生效，不用重打包。
 
 ---
 
@@ -52,7 +59,7 @@
   "schema": 1,
   "version_name": "V 0.1.6.3",
   "version_code": 185,
-  "updated": "2026-09-10 06:10:42",
+  "updated": "2026-09-11 02:35:31",
   "notice": {
     "Name": "1",
     "详情中文": "版本号:V 0.1.6.3\n1.增强技能伤害范围；\n2.资源获得更容易；\n3.提升广告响应速度：\n4.修复若干Bug。",
@@ -69,9 +76,9 @@
 
 ---
 
-## CSV 说明
+## XLSX 说明
 
-**`DT_公告数据表 - Sheet1.csv`**（只保留一行数据）
+**`DT_公告数据表.xlsx`**（只保留一行数据）
 
 | 列 | 说明 |
 | --- | --- |
@@ -79,9 +86,9 @@
 | 详情英文 / 详情中文 / 详情日文 / 详情韩文 | 四种语言正文，列名与 `ST_公告结构体` 字段同名 |
 | 版本号 | **不用单独列** —— 脚本从「详情中文」第一行 `版本号:V x.y.z` 自动提取 |
 
-单元格内换行直接回车即可，CSV 里就是一个 `\n`。
+单元格内换行直接回车即可，XLSX 里就是 `\n`。
 
-**`DT_更新奖励数据表 - Sheet1.csv`**（每种奖励一行）
+**`DT_更新奖励数据表.xlsx`**（每种奖励一行）
 
 列名与工程内 **`ST_日常任务奖励结构体`** 完全一致，就是 UE 直接导出的格式，可以原样导回 `DT_更新奖励数据表`：
 
@@ -110,12 +117,8 @@
 ## 注意
 
 - 这个仓库是公开的，别放任何私密信息
-- **⚠️ CSV 必须存成 UTF-8**。Excel 另存时要选「CSV UTF-8(逗号分隔)」。
-  存成默认的 GBK/ANSI 的话，**韩文会立刻变成 `???` 且无法恢复**（谚文不在 GBK 字符集里）。
-  中文和日文假名在 GBK 里能存，所以只有韩文会坏，很容易漏掉。
-  脚本检测到韩文里出现 `?` 会在生成时打印警告。
-- **韩文已经变成 `???` 怎么办**：先关掉 Excel / WPS，双击 `修复编码.bat`，
-  它会把 CSV 转成 UTF-8 并用内置的正确韩文补齐。
-  就算忘了修，生成 JSON 时脚本也会自动用正确韩文兜底，不会把 `??` 发给玩家（但会打印警告）。
-- `announcement.json` 由脚本生成，不要手改（下次跑脚本会覆盖）；要改就改 CSV
+- **韩文乱码**：已通过改用 XLSX 彻底解决（XLSX 是 Unicode 存储，Excel 编辑不会丢谚文）。
+  只有一种例外——如果某个 XLSX 曾被当成 CSV 另存过，韩文才会变 `?`；
+  这时先关掉 Excel / WPS，双击 `修复编码.bat`（等价于 `python build_json.py --fix`）即可用内置正确韩文兜底。
+- `announcement.json` 由脚本生成，不要手改（下次跑脚本会覆盖）；要改就改 XLSX
 - 网络拿不到数据时，游戏会回退用本地的 `DT_公告数据表` / `DT_更新奖励数据表`，不会白屏也不会卡住
