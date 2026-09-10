@@ -1,40 +1,47 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-公告 CSV -> announcement.json
+公告 XLSX -> announcement.json
 
 用法:
-    python build_json.py            读取 CSV，生成 announcement.json
+    python build_json.py            读取 XLSX，生成 announcement.json
     python build_json.py --check    只打印将要生成的 JSON，不写文件
-    python build_json.py --fix      修复 CSV 编码（GBK->UTF-8）并恢复被破坏的韩文
-    python build_json.py --init     重建两份 CSV 模板
+    python build_json.py --fix      修复 XLSX 里被破坏的韩文（如果出现 ?）
+    python build_json.py --init     重建两份 XLSX 模板
 
 数据源（都在本目录）:
-    DT_公告数据表 - Sheet1.csv       四国语言公告
+    DT_公告数据表.xlsx              四国语言公告
                                     列：编号,详情英文,详情中文,详情日文,详情韩文
-    DT_更新奖励数据表 - Sheet1.csv   这次更新发的奖励
+    DT_更新奖励数据表.xlsx          这次更新发的奖励
                                     列按 ST_日常任务奖励结构体：
                                     ---,奖励名称,ID,奖励数量,物品图标,奖励?,
                                     说明,中文说明,已领取,活跃值,日文说明,韩文说明
     version_code.txt                这次的 versionCode（纯数字，如 185）
 
-编码问题（重要）:
-    CSV 必须是 UTF-8。Excel 默认另存是 GBK/ANSI，而**谚文不在 GBK 字符集**，
-    一存就变成 ??? 且无法恢复（中文、日文假名在 GBK 里能存，所以只有韩文会坏）。
-    本脚本会自动识别 GBK 并告警；用 --fix 可转成 UTF-8 并恢复韩文。
-    读写统一按 utf-8-sig（带 BOM），Excel 双击打开不乱码。
+为什么用 XLSX（而不是 CSV）:
+    CSV 在 Excel 里默认存成 GBK/ANSI，而**谚文不在 GBK 字符集**，一存就变成 ? 且无法恢复。
+    XLSX 是 Unicode 原生存储（Office Open XML），中文/日文/韩文都不会丢，彻底根治乱码。
+    需要 openpyxl：pip install openpyxl
 """
 
-import csv
-import io
-import json
 import os
 import sys
+import json
 from datetime import datetime
 
+try:
+    import openpyxl
+except ImportError:
+    sys.stderr.write(
+        "缺少依赖 openpyxl。请先运行：\n"
+        "  pip install openpyxl\n"
+        "（本机 venv 已装：%APPDATA%\\..\\.workbuddy\\binaries\\python\\envs\\default\\Scripts\\python.exe -m pip install openpyxl）\n"
+    )
+    sys.exit(2)
+
 HERE = os.path.dirname(os.path.abspath(__file__))
-NOTICE_CSV = os.path.join(HERE, "DT_公告数据表 - Sheet1.csv")
-REWARD_CSV = os.path.join(HERE, "DT_更新奖励数据表 - Sheet1.csv")
+NOTICE_XLSX = os.path.join(HERE, "DT_公告数据表.xlsx")
+REWARD_XLSX = os.path.join(HERE, "DT_更新奖励数据表.xlsx")
 CODE_TXT = os.path.join(HERE, "version_code.txt")
 JSON_OUT = os.path.join(HERE, "announcement.json")
 
@@ -109,6 +116,8 @@ SAMPLE_REWARDS = [
 def _text(v):
     if v is None:
         return ""
+    if isinstance(v, float) and v.is_integer():
+        return str(int(v))
     return str(v).replace("\r\n", "\n").replace("\r", "\n").strip()
 
 
@@ -121,28 +130,35 @@ def _int(v, default=0):
         return default
 
 
-def read_csv_any(path):
-    """自动识别编码读 CSV，返回 (字段名, 行列表, 编码)"""
+def read_xlsx(path):
+    """读 XLSX 第一张表，返回 [dict, ...]（表头->单元格）。找不到返回 None。"""
     if not os.path.exists(path):
-        return None, None, None
-    raw = open(path, "rb").read()
-    for enc in ("utf-8-sig", "utf-8", "gbk", "cp936"):
-        try:
-            text = raw.decode(enc)
-            rows = list(csv.DictReader(io.StringIO(text)))
-            fields = list(rows[0].keys()) if rows else []
-            return fields, rows, enc
-        except UnicodeDecodeError:
+        return None
+    wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+    ws = wb.active
+    rows = list(ws.iter_rows(values_only=True))
+    wb.close()
+    if not rows:
+        return []
+    headers = [str(h).strip() if h is not None else "" for h in rows[0]]
+    out = []
+    for r in rows[1:]:
+        if r is None:
             continue
-    raise SystemExit("无法识别编码: %s" % path)
+        d = {}
+        for i, h in enumerate(headers):
+            d[h] = r[i] if i < len(r) else None
+        out.append(d)
+    return out
 
 
-def write_csv_utf8(path, fields, rows):
-    with open(path, "w", encoding="utf-8-sig", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=fields)
-        w.writeheader()
-        for r in rows:
-            w.writerow(r)
+def write_xlsx(path, fields, rows):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(fields)
+    for r in rows:
+        ws.append([r.get(f, "") for f in fields])
+    wb.save(path)
 
 
 def pick_version_name(cn_text):
@@ -155,45 +171,29 @@ def pick_version_name(cn_text):
     return ""
 
 
-def fix_notice_csv():
-    """把公告 CSV 转成 UTF-8，并恢复被 GBK 破坏的韩文"""
-    fields, rows, enc = read_csv_any(NOTICE_CSV)
+def fix_notice_xlsx():
+    rows = read_xlsx(NOTICE_XLSX)
     if rows is None:
-        print("找不到:", NOTICE_CSV)
+        print("找不到:", NOTICE_XLSX)
         return 1
-    print("当前编码:", enc)
-
-    changed_enc = enc not in ("utf-8-sig",)
-    fixed_ko = 0
+    fixed = 0
     for r in rows:
         cn = _text(r.get("详情中文"))
         ko = _text(r.get("详情韩文"))
         if "?" in ko:
             r["详情韩文"] = KO_TEMPLATE.format(ver=pick_version_name(cn))
-            fixed_ko += 1
-        for k in NOTICE_LANGS:
-            if r.get(k):
-                r[k] = _text(r.get(k))
-
-    write_csv_utf8(NOTICE_CSV, fields, rows)
-    print("已按 UTF-8(with BOM) 重写:", NOTICE_CSV)
-    if changed_enc:
-        print("  编码已从 %s 转换为 UTF-8" % enc)
-    if fixed_ko:
-        print("  已恢复 %d 行被破坏的韩文" % fixed_ko)
-    else:
-        print("  韩文无需恢复")
+            fixed += 1
+    write_xlsx(NOTICE_XLSX, ["编号"] + NOTICE_LANGS, rows)
+    print("已重写:", NOTICE_XLSX)
+    print("  恢复被破坏的韩文行数:", fixed)
     return 0
 
 
-def fix_reward_csv():
-    """把奖励 CSV 转 UTF-8，并恢复被 GBK 破坏的韩文/日文说明"""
-    fields, rows, enc = read_csv_any(REWARD_CSV)
+def fix_reward_xlsx():
+    rows = read_xlsx(REWARD_XLSX)
     if rows is None:
-        print("找不到:", REWARD_CSV)
+        print("找不到:", REWARD_XLSX)
         return 0
-    print("奖励表当前编码:", enc)
-
     sample_by_id = {s["ID"]: s for s in SAMPLE_REWARDS}
     fixed = 0
     for r in rows:
@@ -205,25 +205,24 @@ def fix_reward_csv():
             if v and "?" in v:
                 r[k] = s[k]
                 fixed += 1
-
-    write_csv_utf8(REWARD_CSV, fields, rows)
-    print("  已按 UTF-8(with BOM) 重写:", REWARD_CSV)
+    write_xlsx(REWARD_XLSX, REWARD_FIELDS, rows)
+    print("已重写:", REWARD_XLSX)
     print("  恢复字段数:", fixed)
     return 0
 
 
 def write_template():
-    if not os.path.exists(NOTICE_CSV):
-        write_csv_utf8(NOTICE_CSV, ["编号"] + NOTICE_LANGS, [SAMPLE_NOTICE])
-        print("已生成:", NOTICE_CSV)
+    if not os.path.exists(NOTICE_XLSX):
+        write_xlsx(NOTICE_XLSX, ["编号"] + NOTICE_LANGS, [SAMPLE_NOTICE])
+        print("已生成:", NOTICE_XLSX)
     else:
-        print("已存在，跳过:", NOTICE_CSV)
+        print("已存在，跳过:", NOTICE_XLSX)
 
-    if not os.path.exists(REWARD_CSV):
-        write_csv_utf8(REWARD_CSV, REWARD_FIELDS, SAMPLE_REWARDS)
-        print("已生成:", REWARD_CSV)
+    if not os.path.exists(REWARD_XLSX):
+        write_xlsx(REWARD_XLSX, REWARD_FIELDS, SAMPLE_REWARDS)
+        print("已生成:", REWARD_XLSX)
     else:
-        print("已存在，跳过:", REWARD_CSV)
+        print("已存在，跳过:", REWARD_XLSX)
 
     if not os.path.exists(CODE_TXT):
         with open(CODE_TXT, "w", encoding="utf-8", newline="") as f:
@@ -246,33 +245,31 @@ def read_version_code():
 
 
 def build():
-    n_fields, n_rows, n_enc = read_csv_any(NOTICE_CSV)
+    n_rows = read_xlsx(NOTICE_XLSX)
     if n_rows is None:
-        print("找不到公告表：%s" % NOTICE_CSV)
+        print("找不到公告表：%s" % NOTICE_XLSX)
         print("先运行：python build_json.py --init")
         return None
     if not n_rows:
-        print("公告表是空的：%s" % NOTICE_CSV)
+        print("公告表是空的：%s" % NOTICE_XLSX)
         return None
 
-    missing = [c for c in NOTICE_LANGS if c not in (n_fields or [])]
+    n_fields = list(n_rows[0].keys())
+    missing = [c for c in NOTICE_LANGS if c not in n_fields]
     if missing:
         print("公告表缺少列：%s" % ", ".join(missing))
-        print("当前列：%s" % ", ".join(n_fields or []))
+        print("当前列：%s" % ", ".join(n_fields))
         return None
 
     warns = []
-    if n_enc not in ("utf-8-sig", "utf-8"):
-        warns.append("公告表是 %s 编码，不是 UTF-8，韩文可能已损坏。运行 python build_json.py --fix" % n_enc)
 
     n = n_rows[0]
     langs = {k: _text(n.get(k)) for k in NOTICE_LANGS}
     if "?" in langs["详情韩文"]:
-        # CSV 被存成 GBK，谚文已变成 ?。先用内置正确韩文兜底，保证线上不会发出 ??
+        # 极少数情况下 XLSX 里仍然出现 ?（比如曾被当成 CSV 存过），先用内置正确韩文兜底
         langs["详情韩文"] = KO_TEMPLATE.format(ver=pick_version_name(langs["详情中文"]))
         warns.append(
-            "详情韩文 里出现 ?（存成了 GBK，谚文已丢失）。本次已用内置正确韩文写入 JSON，"
-            "但 CSV 本身还是坏的，请关闭 Excel 后运行 python build_json.py --fix"
+            "详情韩文 里出现 ?，已用内置正确韩文兜底。请确认 DT_公告数据表.xlsx 是用 Excel 另存为 .xlsx（不是 CSV）。"
         )
 
     notice = {"Name": _text(n.get("编号")) or "1"}
@@ -280,7 +277,7 @@ def build():
         notice[k] = langs[k]
 
     rewards = []
-    r_fields, r_rows, r_enc = read_csv_any(REWARD_CSV)
+    r_rows = read_xlsx(REWARD_XLSX)
     if r_rows:
         for r in r_rows:
             if not _text(r.get("ID")):
@@ -290,8 +287,6 @@ def build():
                 "奖励名称": _text(r.get("奖励名称")),
                 "奖励数量": _int(r.get("奖励数量"), 0),
             })
-    if r_rows and r_enc not in ("utf-8-sig", "utf-8"):
-        warns.append("奖励表是 %s 编码，建议转 UTF-8" % r_enc)
 
     data = {
         "schema": 1,
@@ -312,8 +307,8 @@ def main():
     if "--init" in args:
         return write_template()
     if "--fix" in args:
-        fix_notice_csv()
-        return fix_reward_csv()
+        fix_notice_xlsx()
+        return fix_reward_xlsx()
 
     data = build()
     if data is None:
