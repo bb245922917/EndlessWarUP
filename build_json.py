@@ -253,7 +253,7 @@ def read_version_code():
     return 0
 
 
-def build():
+def build(override_version_name=None, override_version_code=None):
     n_rows = read_xlsx(NOTICE_XLSX)
     if n_rows is None:
         print("找不到公告表：%s" % NOTICE_XLSX)
@@ -308,10 +308,16 @@ def build():
                 "奖励数量": _int(r.get("奖励数量"), 0),
             })
 
+    # 版本号：默认从公告文本 `版本号:V x.y.z` / version_code.txt 提取；
+    # 若打包流水线传入了游戏版本（--version-name / --version-code）则优先采用，实现"自动匹配"。
+    # 注意：只匹配版本号，描述内容（notice / rewards）始终以数据源 xlsx 为准，这里不做任何改动。
+    vname = (override_version_name or "").strip() or pick_version_name(langs["详情中文"])
+    vcode = override_version_code if override_version_code is not None else read_version_code()
+
     data = {
         "schema": 1,
-        "version_name": pick_version_name(langs["详情中文"]),
-        "version_code": read_version_code(),
+        "version_name": vname,
+        "version_code": vcode,
         "updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "notice": notice,
         "rewards": rewards,
@@ -364,7 +370,19 @@ def main():
         dump_tables()
         return 0
 
-    data = build()
+    # 打包流水线可传入游戏版本，让公告版本号自动对齐（只匹配版本号，描述内容不变）
+    vname_arg = None
+    vcode_arg = None
+    if "--version-name" in args:
+        i = args.index("--version-name")
+        if i + 1 < len(args):
+            vname_arg = args[i + 1]
+    if "--version-code" in args:
+        i = args.index("--version-code")
+        if i + 1 < len(args):
+            vcode_arg = _int(args[i + 1])
+
+    data = build(vname_arg, vcode_arg)
     if data is None:
         return 1
 
@@ -374,8 +392,16 @@ def main():
 
     with open(JSON_OUT, "w", encoding="utf-8", newline="\n") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+    # 回写 version_code.txt，保持文件与本次生成的版本号一致（仅覆盖数字，不动描述内容）
+    if vcode_arg is not None:
+        try:
+            with open(CODE_TXT, "w", encoding="utf-8", newline="") as f:
+                f.write(str(data["version_code"]))
+        except Exception:
+            pass
+    matched = "游戏版本自动匹配" if (vname_arg or vcode_arg is not None) else "公告文本/version_code.txt"
     print("已生成：%s" % JSON_OUT)
-    print("  版本：%s (versionCode %s)" % (data["version_name"], data["version_code"]))
+    print("  版本：%s (versionCode %s)  [来源: %s]" % (data["version_name"], data["version_code"], matched))
     for k in OUT_ORDER:
         print("  %s：%d 字" % (k, len(data["notice"][k])))
     for r in data["rewards"]:
